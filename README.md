@@ -2,7 +2,12 @@
 
 Send files and text between your own devices. Runs on your PC, no internet, no accounts, no database.
 
-## Start it
+## Two ways to use it
+
+- **Web version (no install): https://ravitej6191.github.io/LAN-Sync/** Open it on two devices, tap *Connect a device*, scan or paste a code, and files and text go straight between the two devices (encrypted, peer to peer). Nothing is uploaded to a server and nothing is stored. Both devices must keep the page open, files are held in memory while they transfer, and history is not kept.
+- **PC version (this folder):** a small server on your PC that stores files, shows everyone connected, keeps folders and history. Instructions below.
+
+## Start the PC version
 
 1. Install [Node.js](https://nodejs.org) (version 18 or newer).
 2. Double-click `start.bat` (or run `node server.js` in this folder).
@@ -45,7 +50,7 @@ Notes:
 
 LAN Share is released under the [MIT License](LICENSE).
 
-It bundles one third-party library, copied locally so it works offline: **qrcode-generator** by Kazuhiko Arase (`qrcode.js`), also MIT licensed. Its licence notice is kept at the top of that file. "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
+It bundles third-party libraries, copied locally so they work offline: **qrcode-generator** by Kazuhiko Arase (`qrcode.js`, MIT; its notice is kept at the top of that file) and, in the web version, **jsQR** by Cosmo Wolfe (`docs/jsQR.js`, Apache-2.0; licence in `docs/LICENSE-jsQR.txt`). "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
 
 ## Do not publish these
 
