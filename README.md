@@ -41,6 +41,12 @@ Notes:
 - If you want only your approved devices to join, turn on **Ask before new devices join** (and optionally a 4-digit PIN) in the Devices panel.
 - If Tailscale is installed after the server was started, restart the server once so it recognises the new address.
 
+## License and credits
+
+LAN Share is released under the [MIT License](LICENSE).
+
+It bundles one third-party library, copied locally so it works offline: **qrcode-generator** by Kazuhiko Arase (`qrcode.js`), also MIT licensed. Its licence notice is kept at the top of that file. "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
+
 ## Do not publish these
 
 If you put this folder in a Git repository, leave out:

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAN Share</title>
+<meta name="description" content="Send files and text between your own devices on the same WiFi. No internet, no accounts, no database.">
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --fg:#e6edf3; --mut:#8b949e; --acc:#2f81f7; --accfg:#fff; color-scheme:dark light }
+  @media (prefers-color-scheme: light) { :root { --bg:#f0f3f6; --card:#fff; --line:#d1d9e0; --fg:#1f2328; --mut:#59636e; --acc:#0969da } }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif }
+  .wrap { max-width:860px; margin:0 auto; padding:0 20px }
+  header { padding:56px 0 28px }
+  .logo { display:flex; align-items:center; gap:14px }
+  .logo img { width:52px; height:52px; border-radius:12px }
+  h1 { margin:0; font-size:1.9rem; letter-spacing:-.01em }
+  .tag { color:var(--mut); margin:2px 0 0 }
+  .lead { font-size:1.2rem; margin:26px 0 22px; max-width:640px }
+  .btns { display:flex; flex-wrap:wrap; gap:10px }
+  .btn { display:inline-block; padding:11px 18px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); text-decoration:none; font-weight:650 }
+  .btn.pri { background:var(--acc); border-color:var(--acc); color:var(--accfg) }
+  .btn:hover { filter:brightness(1.1) }
+  section { padding:26px 0; border-top:1px solid var(--line) }
+  h2 { margin:0 0 14px; font-size:1.2rem }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)) }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px }
+  .card b { display:block; margin-bottom:4px }
+  .card span { color:var(--mut); font-size:.95rem }
+  ol { padding-left:22px; margin:0 } li { margin:6px 0 }
+  code { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font:.9em ui-monospace,Consolas,monospace }
+  .note { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--acc); border-radius:8px; padding:14px 16px; color:var(--mut) }
+  .note b { color:var(--fg) }
+  footer { padding:28px 0 56px; color:var(--mut); font-size:.9rem; border-top:1px solid var(--line) }
+  a { color:var(--acc) }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <img src="icon-192.png" alt="">
+      <div><h1>LAN Share</h1><p class="tag">Phone &#8644; PC, no internet needed</p></div>
+    </div>
+    <p class="lead">Send files and text between your own devices on the same WiFi. It runs on your PC: no accounts, no database, nothing leaves your network.</p>
+    <div class="btns">
+      <a class="btn pri" href="https://github.com/Ravitej6191/LAN-Sync/releases/latest">Download</a>
+      <a class="btn" href="https://github.com/Ravitej6191/LAN-Sync#readme">Read the setup guide</a>
+      <a class="btn" href="https://github.com/Ravitej6191/LAN-Sync">Source code</a>
+    </div>
+  </header>
+
+  <section>
+    <h2>What it does</h2>
+    <div class="grid">
+      <div class="card"><b>Files and text</b><span>Send photos, videos, documents and notes. Scan a QR code on your PC and your phone is connected.</span></div>
+      <div class="card"><b>Big files, flaky WiFi</b><span>Uploads go up in pieces and carry on from where they stopped if the connection drops. Zip several files at once.</span></div>
+      <div class="card"><b>Folders and previews</b><span>Group files into folders, switch between grid and list, sort, and preview images, video, audio and PDFs.</span></div>
+      <div class="card"><b>Send to one device</b><span>Make a file or note visible only to the device you pick.</span></div>
+      <div class="card"><b>You control who joins</b><span>See connected devices, rename them, revoke or block them, and ask for approval or a 4-digit PIN before a new device joins.</span></div>
+      <div class="card"><b>Dark and light</b><span>Works on phone and desktop. Installable to the home screen, with an optional encrypted address.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Run it in a minute</h2>
+    <ol>
+      <li>Install <a href="https://nodejs.org">Node.js</a> (version 18 or newer).</li>
+      <li>Download and unzip LAN Share, then double-click <code>start.bat</code> (or run <code>node server.js</code>).</li>
+      <li>Your browser opens. Open the <b>Scan QR</b> panel and scan the code with your phone camera.</li>
+    </ol>
+    <p>Want it from anywhere? The setup guide has a step-by-step for <a href="https://github.com/Ravitej6191/LAN-Sync#use-it-from-anywhere-with-tailscale">Tailscale</a>, a free private network between your own devices.</p>
+  </section>
+
+  <section>
+    <div class="note"><b>Why this page can't run the app.</b> LAN Share needs a small server running on your own PC to store and hand over your files. This page is only a description. It is not meant for the public internet: there is no login, so run it on your home WiFi or over Tailscale.</div>
+  </section>
+
+  <footer>MIT licensed. Bundles qrcode-generator by Kazuhiko Arase (MIT).</footer>
+</div>
+</body>
+</html>
