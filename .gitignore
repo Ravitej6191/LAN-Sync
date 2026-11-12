@@ -1,0 +1,11 @@
+# Your files, notes, settings, approvals and block lists
+shared/
+
+# Private key + password for the HTTPS certificate made on first run
+cert/
+
+node_modules/
+*.log
+*.pfx
+*.pass
+.claude/

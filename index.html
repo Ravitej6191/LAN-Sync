@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<script>try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon.png?v=2">
+<link rel="shortcut icon" href="/favicon.ico?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LAN Share">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>LAN Share</title>
+<style>
+  :root {
+    --bg:#070b17; --fg:#eef2ff; --mut:#8b97b8; --line:rgba(255,255,255,.08);
+    --glass:rgba(255,255,255,.045); --glass2:rgba(255,255,255,.08);
+    --acc:#6366f1; --acc2:#22d3ee; --grad:linear-gradient(135deg,#6366f1,#22d3ee);
+    --danger:#fb7185; --ok:#34d399; --warn:#f59e0b; --radius:22px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#eef1fb; --fg:#12172b; --mut:#5d6a8c; --line:rgba(20,30,70,.09); --glass:rgba(255,255,255,.75); --glass2:rgba(255,255,255,.95); }
+    body::before { opacity:.5 }
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  [hidden] { display:none !important }
+  html { background:var(--bg) }
+  body { margin:0; color:var(--fg); font:16px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif; min-height:100vh; padding-bottom:env(safe-area-inset-bottom) }
+  body::before { content:""; position:fixed; inset:0; z-index:-1;
+    background:
+      radial-gradient(600px 400px at 12% -5%, rgba(99,102,241,.35), transparent 70%),
+      radial-gradient(500px 380px at 95% 8%, rgba(34,211,238,.22), transparent 70%),
+      radial-gradient(700px 500px at 60% 110%, rgba(168,85,247,.18), transparent 70%); }
+  button { font:inherit; color:inherit }
+
+  .wrap { max-width:1320px; margin:0 auto; padding:0 20px }
+  nav { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:22px 0 8px }
+  .brand { display:flex; align-items:center; gap:12px }
+  .logo { width:44px; height:44px; border-radius:14px; background:var(--grad); display:grid; place-items:center; box-shadow:0 8px 24px rgba(99,102,241,.45) }
+  .logo svg { width:24px; height:24px; color:#fff }
+  .brand h1 { font-size:1.3rem; margin:0; letter-spacing:-.01em }
+  .brand p { margin:0; color:var(--mut); font-size:.85rem }
+  .conn { display:flex; gap:10px; align-items:center }
+  .pill { display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:var(--glass); border:1px solid var(--line); font-size:.85rem; color:var(--fg); backdrop-filter:blur(12px); cursor:pointer; position:relative }
+  .pill:hover { border-color:rgba(129,140,248,.6) }
+  .pill .lbl { font-weight:650 }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); animation:pulse 2s infinite }
+  @keyframes pulse { 0% { box-shadow:0 0 0 0 rgba(52,211,153,.6) } 70%,100% { box-shadow:0 0 0 8px rgba(52,211,153,0) } }
+  .badge-n { min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--danger); color:#fff; font-size:.7rem; font-weight:800; display:inline-grid; place-items:center }
+
+  main { display:grid; gap:22px; grid-template-columns:1fr; padding:16px 0 48px }
+  .card { background:var(--glass); border:1px solid var(--line); border-radius:var(--radius); padding:26px; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px) }
+
+  /* tabs */
+  .tabs { display:inline-flex; gap:4px; padding:5px; border-radius:16px; background:rgba(0,0,0,.22); border:1px solid var(--line); margin-bottom:18px; max-width:100% }
+  @media (prefers-color-scheme: light) { .tabs { background:rgba(20,30,70,.06) } }
+  .tab { display:flex; align-items:center; gap:8px; border:0; background:transparent; color:var(--mut); font-weight:650; font-size:1.02rem; padding:12px 26px; border-radius:12px; cursor:pointer; transition:.2s }
+  .tab svg { width:18px; height:18px }
+  .tab:hover { color:var(--fg) }
+  .tab.on { background:var(--grad); color:#fff; box-shadow:0 6px 18px rgba(99,102,241,.4) }
+  .count { background:var(--glass2); border-radius:999px; padding:2px 11px; font-size:.8rem; color:var(--mut); font-weight:700 }
+  .tab.on .count { background:rgba(255,255,255,.25); color:#fff }
+  .count:empty { display:none }
+  .count.new { background:var(--danger); color:#fff }
+  .panel { animation:in .25s both }
+  @keyframes in { from { opacity:0; transform:translateY(8px) } }
+
+  /* upload */
+  #drop { border-radius:18px; padding:30px 22px; display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:6px; cursor:pointer; color:var(--mut); background:var(--glass); border:1.5px dashed rgba(129,140,248,.5); transition:.2s }
+  #drop:hover, body.dragging #drop { border-color:var(--acc2); background:rgba(34,211,238,.08); color:var(--fg) }
+  #drop .up { width:62px; height:62px; border-radius:18px; background:var(--grad); display:grid; place-items:center; flex:none; box-shadow:0 8px 22px rgba(99,102,241,.4) }
+  #drop .up svg { width:26px; height:26px; color:#fff }
+  #drop b { color:var(--fg); display:block; font-size:1.12rem }
+  #drop span { font-size:.88rem }
+  #uq { display:grid; gap:8px; margin-top:12px }
+  .u { display:grid; grid-template-columns:1fr auto; gap:4px 10px; align-items:center; padding:10px 14px; border-radius:12px; background:var(--glass2); border:1px solid var(--line); font-size:.88rem }
+  .u .n { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600 }
+  .u .bar { grid-column:1/-1; height:5px; border-radius:5px; background:rgba(255,255,255,.08); overflow:hidden }
+  .u .bar i { display:block; height:100%; width:0; background:var(--grad); transition:width .15s }
+  .u.err { border-color:rgba(251,113,133,.5) } .u.err .bar i { background:var(--danger); width:100% !important }
+  .u .s { color:var(--mut); font-size:.8rem } .u.err .s { color:var(--danger) }
+  .u .ac { display:flex; gap:6px }
+
+  /* toolbar */
+  .tools { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; flex:1 }
+  .chip { border:1px solid var(--line); background:var(--glass); color:var(--mut); border-radius:999px; padding:6px 14px; font-size:.85rem; cursor:pointer; transition:.15s }
+  .chip:hover { color:var(--fg) }
+  .chip.on { background:var(--grad); color:#fff; border-color:transparent }
+  .mini { border:1px solid var(--line); background:var(--glass2); border-radius:9px; padding:6px 11px; font-size:.8rem; font-weight:650; cursor:pointer; white-space:nowrap }
+  .mini:hover { border-color:var(--warn); color:var(--warn) }
+  .mini.red:hover { border-color:var(--danger); color:var(--danger) }
+  .mini.ok { color:var(--ok); border-color:rgba(52,211,153,.4) } .mini.ok:hover { background:rgba(52,211,153,.12); border-color:var(--ok); color:var(--ok) }
+  .mini.pri { background:var(--grad); border:0; color:#fff } .mini.pri:hover { filter:brightness(1.1); color:#fff }
+
+  #selbar { position:sticky; top:10px; z-index:30; display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; margin-bottom:14px; border-radius:14px; background:var(--bg); border:1px solid var(--acc); box-shadow:0 10px 30px rgba(0,0,0,.4) }
+  #selbar { justify-content:space-between }
+  #selbar .sb1, #selbar .sb2 { display:flex; align-items:center; gap:8px }
+  #selbar .sb1 { flex:1 1 220px } #selbar b { flex:1 }
+  #selbar .sb2 { flex:0 1 auto }
+  @media (max-width:560px) { #selbar .sb2 { flex:1 1 100% } #selbar .sb2 .mini { flex:1; padding:9px 8px } #selbar .sb2 .pri { flex:2 } }
+  .tick { background:var(--bg) !important; border:2px solid var(--mut) !important; color:#fff }
+  .file.sel .tick { background:var(--acc) !important; border-color:var(--acc) !important }
+
+  /* files */
+  #files { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px }
+  .file { position:relative; border-radius:18px; overflow:hidden; background:var(--glass); border:1px solid var(--line); display:flex; flex-direction:column; transition:.2s }
+  .file.new { animation:in .3s both }
+  .file:hover { transform:translateY(-4px); border-color:rgba(129,140,248,.5); box-shadow:0 16px 36px rgba(0,0,0,.35) }
+  .thumb { height:150px; display:grid; place-items:center; position:relative; overflow:hidden; color:#fff; cursor:default }
+  .thumb.pv { cursor:zoom-in }
+  .thumb video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none }
+  .thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+  .thumb svg.k { width:52px; height:52px; filter:drop-shadow(0 4px 10px rgba(0,0,0,.25)) }
+  .thumb .play { position:absolute; width:46px; height:46px; border-radius:50%; background:rgba(0,0,0,.45); display:grid; place-items:center }
+  .badge { position:absolute; left:10px; top:10px; background:rgba(0,0,0,.35); backdrop-filter:blur(6px); color:#fff; font-size:.68rem; font-weight:700; letter-spacing:.06em; padding:3px 8px; border-radius:8px }
+  .tick { position:absolute; right:10px; top:10px; width:26px; height:26px; border-radius:8px; border:2px solid rgba(255,255,255,.8); background:rgba(0,0,0,.3); display:none; place-items:center; color:#fff }
+  .selecting .tick { display:grid }
+  .file.sel { border-color:var(--acc2); box-shadow:0 0 0 2px var(--acc2) }
+  .file.sel .tick { background:var(--acc); border-color:#fff }
+  .tick svg { width:16px; height:16px; opacity:0 } .file.sel .tick svg { opacity:1 }
+  .selecting .file { cursor:pointer }
+  .meta { padding:12px 14px 4px; min-width:0 }
+  .name { font-weight:650; font-size:.98rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .sub { color:var(--mut); font-size:.82rem; margin-top:2px }
+  .acts { display:flex; gap:8px; padding:10px 14px 14px; margin-top:auto }
+  .selecting .acts { opacity:.4; pointer-events:none }
+  .ic { display:flex; align-items:center; justify-content:center; gap:7px; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--glass2); color:var(--fg); text-decoration:none; font-size:.88rem; font-weight:600; cursor:pointer; transition:.15s }
+  .ic svg { width:18px; height:18px }
+  .ic.dl { flex:1; background:var(--grad); border:0; color:#fff }
+  .ic.dl:hover { filter:brightness(1.12) }
+  .ic.del { width:40px }
+  .ic.del:hover { color:var(--danger); border-color:var(--danger); background:rgba(251,113,133,.1) }
+  .empty { grid-column:1/-1; text-align:center; padding:56px 10px; color:var(--mut) }
+  .empty svg { width:56px; height:56px; opacity:.5; margin-bottom:10px }
+  .empty b { display:block; color:var(--fg); font-size:1.05rem; margin-bottom:2px }
+  .foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:18px; color:var(--mut); font-size:.85rem }
+
+  /* text snippets */
+  textarea { width:100%; min-height:110px; padding:16px; border:1px solid var(--line); border-radius:14px; background:rgba(0,0,0,.22); color:var(--fg); font:1rem/1.5 ui-monospace,"Cascadia Code",Consolas,monospace; resize:vertical }
+  @media (prefers-color-scheme: light) { textarea { background:rgba(20,30,70,.04) } }
+  textarea:focus { outline:none; border-color:var(--acc); box-shadow:0 0 0 3px rgba(99,102,241,.25) }
+  .row { display:flex; gap:10px; margin-top:12px }
+  .btn { flex:1; border:0; border-radius:12px; padding:14px 18px; font-size:1rem; font-weight:650; cursor:pointer; color:#fff; background:var(--grad); transition:.15s; box-shadow:0 6px 18px rgba(99,102,241,.35) }
+  .btn:hover { filter:brightness(1.1); transform:translateY(-1px) }
+  .hint { color:var(--mut); font-size:.8rem; margin-top:8px }
+  #snips { display:grid; gap:12px; margin-top:22px }
+  .snip { padding:14px 16px; border-radius:14px; background:var(--glass); border:1px solid var(--line) }
+  .snip.new { animation:in .3s both }
+  .snip pre { margin:0 0 10px; white-space:pre-wrap; word-break:break-word; font:.95rem/1.5 ui-monospace,"Cascadia Code",Consolas,monospace; max-height:180px; overflow:auto }
+  .snip .r { display:flex; gap:8px; align-items:center }
+  .snip .r small { flex:1; color:var(--mut) }
+
+  /* panels (side drawers) */
+  .pop { position:fixed; top:0; right:0; bottom:0; width:min(400px,100vw); height:100%; border-radius:26px 0 0 26px; padding:24px 24px 32px; z-index:70; overflow:auto; background:var(--bg); border:1px solid var(--line); border-right:0;
+    transform:translateX(106%); visibility:hidden; transition:transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s .3s; box-shadow:-24px 0 60px rgba(0,0,0,.45) }
+  .pop.open { transform:none; visibility:visible; transition:transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s }
+  #scrim { position:fixed; inset:0; z-index:65; background:rgba(3,6,15,.55); backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .3s }
+  #scrim.open { opacity:1; pointer-events:auto }
+  .phead { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; font-size:1.15rem; font-weight:750 }
+  .x { width:36px; height:36px; border-radius:10px; border:1px solid var(--line); background:var(--glass2); cursor:pointer }
+  .x:hover { border-color:var(--acc) }
+  #qrpop { text-align:center }
+  #qr { display:inline-block; background:#fff; padding:14px; border-radius:20px; line-height:0; box-shadow:0 12px 40px rgba(0,0,0,.35) }
+  #qr svg { width:200px; height:200px }
+  #urls { display:grid; gap:8px; text-align:left }
+  .addr { display:block; width:100%; text-align:left; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--glass2); cursor:pointer; word-break:break-all }
+  .addr b { display:block; font-size:.9rem } .addr small { color:var(--mut); font-size:.75rem }
+  .addr.on { border-color:var(--acc); box-shadow:0 0 0 1px var(--acc) }
+  .addr:hover { border-color:var(--mut) }
+  .devhead { margin:20px 0 6px; padding-top:14px; border-top:1px solid var(--line); font-size:.75rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--mut) }
+  .devhead:first-child { margin-top:0; padding-top:0; border:0 }
+  .devhead.red { color:var(--danger) } .devhead.warn { color:var(--warn) }
+  .dev { display:flex; align-items:center; gap:10px; padding:11px 0 }
+  .dev + .dev { border-top:1px solid var(--line) }
+  .dev .ico { flex:none; width:34px; height:34px; border-radius:10px; background:var(--grad); display:grid; place-items:center; color:#fff }
+  .dev .ico svg { width:18px; height:18px }
+  .dev .nm { flex:1; min-width:0 }
+  .dev .nm b { display:block; font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .dev .nm small { color:var(--mut); font-size:.75rem }
+  .tag { font-size:.68rem; font-weight:700; background:rgba(52,211,153,.15); color:var(--ok); padding:1px 7px; border-radius:6px; margin-left:6px }
+  .set { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:10px 0 }
+  .set small { display:block; color:var(--mut); font-size:.78rem }
+  select { background:var(--glass2); color:var(--fg); border:1px solid var(--line); border-radius:9px; padding:7px 10px; font:inherit; font-size:.85rem }
+  .sw { position:relative; width:46px; height:26px; flex:none } .sw input { opacity:0; width:100%; height:100%; position:absolute; inset:0; margin:0; cursor:pointer; z-index:1 }
+  .sw span { position:absolute; inset:0; border-radius:13px; background:var(--glass2); border:1px solid var(--line); transition:.2s }
+  .sw span::after { content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.2s }
+  .sw input:checked + span { background:var(--acc) } .sw input:checked + span::after { transform:translateX(20px) }
+
+  /* overlays */
+  #veil { position:fixed; inset:0; z-index:50; display:none; place-items:center; background:rgba(7,11,23,.78); backdrop-filter:blur(8px); font-size:1.5rem; font-weight:700; text-align:center; color:#fff }
+  body.dragging #veil { display:grid }
+  #veil div { padding:48px 64px; border:2px dashed var(--acc2); border-radius:28px }
+  .full { position:fixed; inset:0; z-index:100; display:none; place-items:center; text-align:center; background:var(--bg); padding:20px }
+  .full.on { display:grid } .full h1 { margin:0 0 6px } .full p { color:var(--mut); margin:0 }
+  #offline { position:fixed; top:0; left:0; right:0; z-index:90; padding:10px; text-align:center; font-weight:650; font-size:.9rem; background:var(--warn); color:#1a1200; transform:translateY(-100%); transition:transform .25s }
+  #offline.on { transform:none }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,40px); opacity:0; display:flex; align-items:center; gap:14px; background:var(--bg); border:1px solid var(--line); padding:12px 20px; border-radius:14px; font-weight:600; transition:.25s; z-index:120; box-shadow:0 12px 30px rgba(0,0,0,.5); pointer-events:none; max-width:calc(100vw - 24px) }
+  #toast.show { opacity:1; transform:translate(-50%,0); pointer-events:auto }
+  #toast button { border:0; background:transparent; color:var(--acc2); font-weight:800; cursor:pointer; padding:0 }
+  #lb { position:fixed; inset:0; z-index:110; background:#05070d; display:none; flex-direction:column; align-items:center; justify-content:center; padding:56px 16px 16px; gap:12px }
+  #lb.on { display:flex }
+  #lb .stage { flex:1; min-height:0; width:100%; display:grid; place-items:center }
+  #lb .stage > * { max-width:100%; max-height:100%; border-radius:12px; border:0 }
+  #lb iframe { width:min(1000px,100%); height:100%; background:#fff }
+  #lb .bar { position:absolute; top:10px; left:16px; right:16px; display:flex; align-items:center; gap:10px; color:#fff }
+  #lb .bar b { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  #lb .bar a { text-decoration:none }
+  #lb .nav { position:absolute; top:50%; transform:translateY(-50%); width:44px; height:64px; border:0; border-radius:8px; background:rgba(255,255,255,.14); color:#fff; font-size:2rem; line-height:1; cursor:pointer; z-index:2 }
+  #lb .nav:hover { background:rgba(255,255,255,.26) } #lb .prev { left:10px } #lb .next { right:10px }
+  #lb .pos { color:#cbd5e1; font-size:.85rem }
+
+  /* ===== Flat dark theme overrides ===== */
+  :root { --bg:#0d1117 !important; --fg:#e6edf3 !important; --mut:#8b949e !important; --line:#30363d !important;
+    --glass:#161b22 !important; --glass2:#21262d !important; --acc:#2f81f7 !important; --acc2:#2f81f7 !important;
+    --grad:#2f81f7 !important; --danger:#f85149 !important; --ok:#3fb950 !important; --warn:#d29922 !important; --radius:12px !important }
+  body::before { display:none !important }
+  * { backdrop-filter:none !important; -webkit-backdrop-filter:none !important }
+  .logo, #drop .up, .tab.on, .btn, .dev .ico, .ic.dl, .mini.pri, .chip.on { box-shadow:none !important }
+  .logo { width:40px; height:40px; background:none !important; display:block; object-fit:contain }
+  .card { padding:20px }
+  .tabs { background:transparent !important; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:0; gap:0; margin-bottom:20px; display:flex }
+  .tab { border-radius:0; padding:12px 20px; border-bottom:2px solid transparent; margin-bottom:-1px }
+  .tab.on { background:transparent !important; color:var(--fg); border-bottom-color:var(--acc) }
+  .tab.on .count { background:var(--glass2); color:var(--fg) }
+  #drop { border-radius:12px; border:1px dashed var(--line); background:transparent }
+  #drop:hover, body.dragging #drop { border-color:var(--acc); background:rgba(47,129,247,.06) }
+  #drop .up { border-radius:10px; width:48px; height:48px }
+  .pill { border-radius:8px; background:var(--glass); backdrop-filter:none }
+  .pill:hover { border-color:var(--mut) }
+  .dot { animation:none }
+  .chip { border-radius:8px } .chip.on { background:var(--glass2); color:var(--fg); border-color:var(--mut) }
+  .mini { border-radius:6px; background:var(--glass2) }
+  .mini:hover { border-color:var(--mut); color:var(--fg) } .mini.red:hover { border-color:var(--danger); color:var(--danger) }
+  .mini.pri { background:var(--acc); color:#fff } .mini.pri:hover { background:#4090ff; filter:none }
+  #selbar { border-radius:10px; box-shadow:none; background:var(--glass) }
+  #files { gap:14px }
+  .file { border-radius:10px; background:var(--glass) }
+  .file:hover { transform:none; border-color:var(--mut); box-shadow:none }
+  .file.sel { box-shadow:0 0 0 2px var(--acc) !important; border-color:var(--acc) }
+  .thumb { height:130px; background:var(--glass2) !important }
+  .thumb svg.k { filter:none; width:44px; height:44px; color:var(--mut) }
+  .badge { background:rgba(13,17,23,.85); border:1px solid var(--line); border-radius:6px }
+  .ic { border-radius:8px } .ic.dl { background:var(--acc); } .ic.dl:hover { filter:none; background:#4090ff }
+  textarea { background:var(--bg); border-radius:8px } textarea:focus { box-shadow:none }
+  .btn { border-radius:8px } .btn:hover { transform:none; filter:none; background:#4090ff }
+  .snip { border-radius:8px }
+  .pop { border-radius:0; box-shadow:-8px 0 24px rgba(0,0,0,.5); background:var(--glass) }
+  #scrim { background:rgba(1,4,9,.6) }
+  #qr { border-radius:10px; box-shadow:none }
+  .dev .ico { border-radius:8px; background:var(--glass2); color:var(--mut) }
+  .x { border-radius:8px }
+  #toast { box-shadow:none; background:var(--glass2); border-radius:8px }
+  #toast button { color:var(--acc) }
+  .u { border-radius:8px }
+  #veil div { border-radius:12px; border-color:var(--acc) }
+
+  /* ===== Light theme (toggle) ===== */
+  html[data-theme="light"] { --bg:#ffffff !important; --fg:#1f2328 !important; --mut:#59636e !important; --line:#d1d9e0 !important;
+    --glass:#f6f8fa !important; --glass2:#eaeef2 !important; --acc:#0969da !important; --acc2:#0969da !important; --grad:#0969da !important;
+    --danger:#cf222e !important; --ok:#1a7f37 !important; --warn:#9a6700 !important; color-scheme:light }
+  html[data-theme="light"] body { background:#f0f3f6 }
+  html[data-theme="light"] .card { background:#fff }
+  html[data-theme="light"] .file, html[data-theme="light"] .snip, html[data-theme="light"] .pill { background:#fff }
+  html[data-theme="light"] .thumb { background:var(--glass2) !important }
+  html[data-theme="light"] .badge { background:rgba(255,255,255,.92); color:var(--fg) }
+  html[data-theme="light"] .pop, html[data-theme="light"] .modal .box { background:#fff; box-shadow:-8px 0 24px rgba(31,35,40,.15) }
+  html[data-theme="light"] #selbar, html[data-theme="light"] #toast { background:#fff; box-shadow:0 4px 16px rgba(31,35,40,.15) }
+  html[data-theme="light"] #scrim, html[data-theme="light"] .modal { background:rgba(31,35,40,.4) }
+  html[data-theme="light"] #veil { background:rgba(255,255,255,.85); color:var(--fg) }
+  html[data-theme="light"] textarea, html[data-theme="light"] .modal .in { background:#fff }
+  html[data-theme="light"] .sw span::after { background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.3) }
+  html[data-theme="light"] .sw span { background:#d1d9e0 }
+  html[data-theme="light"] .sw input:checked + span { background:var(--acc) }
+  html[data-theme="light"] .mini.pri:hover, html[data-theme="light"] .btn:hover, html[data-theme="light"] .ic.dl:hover { background:#0860ca }
+  html[data-theme="light"] .u .bar { background:var(--glass2) }
+  #themebtn { width:38px; height:38px; padding:0; justify-content:center }
+  #themebtn svg { width:18px; height:18px }
+  #themebtn .sun { display:none } html[data-theme="light"] #themebtn .sun { display:block } html[data-theme="light"] #themebtn .moon { display:none }
+  /* QR panel: everything centred in one column */
+  #qrpop { display:flex; flex-direction:column; align-items:center; text-align:center }
+  #qrpop .phead { align-self:stretch; justify-content:center; position:relative; margin-bottom:22px }
+  #qrpop .phead .x { position:absolute; right:0; top:50%; transform:translateY(-50%) }
+  #qr { padding:16px; border-radius:12px; border:1px solid var(--line); box-shadow:none; margin:4px 0 16px }
+  #qr svg { width:210px; height:210px; display:block }
+  #qrpop .qh { margin:0; color:var(--fg); font-size:.95rem; line-height:1.5 }
+  .qsep { align-self:stretch; display:flex; align-items:center; gap:12px; margin:22px 0 14px; color:var(--mut); font-size:.72rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase }
+  .qsep::before, .qsep::after { content:""; flex:1; height:1px; background:var(--line) }
+  #urls { align-self:stretch; justify-items:stretch; text-align:center }
+  .addr { text-align:center }
+  #qrpop .qt { margin:12px 0 0; color:var(--mut); font-size:.78rem }
+  .seg.sortseg { display:inline-flex; width:auto; margin:0 auto 0 0; border-radius:8px; background:var(--glass) }
+  .seg.sortseg button { flex:none; padding:5px 14px; font-size:.8rem; font-weight:600; color:var(--mut) }
+  .seg.sortseg button.on { background:var(--glass2); color:var(--fg) }
+  .seg.sortseg button + button { border-left:1px solid var(--line) }
+  .u .ac { align-items:center }
+  .seg.viewseg { display:inline-flex; width:auto; margin:0; border-radius:8px; background:var(--glass) }
+  .seg.viewseg button { flex:none; display:grid; place-items:center; padding:5px 10px; color:var(--mut) }
+  .seg.viewseg button svg { width:16px; height:16px }
+  .seg.viewseg button.on { background:var(--glass2); color:var(--fg) }
+  .seg.viewseg button + button { border-left:1px solid var(--line) }
+  .seg.sortseg { margin-right:0 } .tools #chips + .sortseg { margin-right:auto }
+
+  /* send-to bar */
+  .sendbar { display:flex; align-items:center; gap:10px; margin:-6px 0 16px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--glass) }
+  .sendbar .sl { flex:none; font-size:.75rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--mut) }
+  .sendbar .chips { flex:1; min-width:0 }
+  .sendbar .chip { white-space:nowrap }
+  @media (max-width:560px) { .sendbar { flex-direction:column; align-items:flex-start; gap:8px } .sendbar .chips { width:100% } }
+  #newFolder { margin-left:auto } #newFolder[hidden] + #selBtn { margin-left:auto }
+  .priv { display:flex; align-items:center; gap:5px; margin-top:4px; font-size:.74rem; font-weight:650; color:var(--acc) }
+  .priv { align-items:flex-start } .priv svg { width:13px; height:13px; flex:none; margin-top:2px } .priv span { min-width:0; overflow-wrap:anywhere; line-height:1.3 }
+  .snip .priv { margin:-2px 0 10px }
+  .into { display:block; margin-top:2px; color:var(--acc); font-weight:600 }
+  .infolder { color:var(--mut) }
+
+  /* folders */
+  #crumbs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 14px }
+  #crumbs b { flex:1; min-width:80px; font-size:1.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .file.folder { cursor:pointer } .file.folder:hover { border-color:var(--mut) }
+  .file.folder .thumb { background:var(--glass2) !important } .file.folder .thumb svg.k { width:52px; height:52px; color:var(--acc) }
+  .file.folder:focus-visible { outline:2px solid var(--acc); outline-offset:2px }
+  #files.list .file.folder .thumb svg.k { width:28px; height:28px }
+  .modal .fl { display:grid; gap:6px; margin:6px 0 14px; max-height:46vh; overflow:auto }
+  .fopt { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:var(--glass2); cursor:pointer; font-weight:600 }
+  .fopt:hover, .fopt:focus-visible { border-color:var(--acc); outline:none }
+  .fopt svg { width:20px; height:20px; flex:none; color:var(--acc) } .fopt.new { color:var(--acc) }
+  .fopt span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+
+  /* list view: one compact row per file */
+  #files.list { grid-template-columns:1fr; gap:8px }
+  #files.list .file { flex-direction:row; align-items:center; border-radius:10px }
+  #files.list .thumb { width:64px; height:64px; flex:none }
+  #files.list .thumb svg.k { width:26px; height:26px }
+  #files.list .thumb .badge { display:none }
+  #files.list .thumb .play { width:26px; height:26px } #files.list .thumb .play svg { width:14px; height:14px }
+  #files.list .tick { width:20px; height:20px; top:4px; right:4px; border-radius:6px } #files.list .tick svg { width:13px; height:13px }
+  #files.list .meta { flex:1; min-width:0; padding:0 12px }
+  #files.list .acts { padding:0 10px 0 0; margin:0 }
+  #files.list .ic.dl { flex:none; width:40px } #files.list .ic.dl span { display:none }
+  .pill, .pill * { white-space:nowrap }
+  .brand { min-width:0 } .brand > div { min-width:0 } .brand p { white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  nav { flex-wrap:nowrap } .conn { flex:none }
+  @media (max-width:420px) { .brand p { font-size:.78rem } .brand h1 { font-size:1.15rem } .logo { width:36px; height:36px } .wrap { padding:0 12px } }
+  @media (pointer:coarse) { .desk { display:none } }
+  @media (max-width:640px) { .chips { flex:1 1 100% } }
+  #cnt { float:right }
+  .pinrow { display:flex; gap:8px; justify-content:center; align-items:center; margin:4px 0 10px }
+  .pw { position:relative; display:inline-block }
+  .eye { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:32px; height:32px; border:0; border-radius:6px; background:transparent; color:var(--mut); cursor:pointer; display:grid; place-items:center; padding:0 }
+  .eye:hover { color:var(--fg); background:var(--glass2) } .eye svg { width:18px; height:18px }
+  .pw .pin { padding-right:38px }
+  .pin { width:140px; text-align:center; letter-spacing:.45em; font:700 1.3rem ui-monospace,Consolas,monospace; padding:9px 6px 9px 12px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px }
+  .pin:focus { outline:none; border-color:var(--acc) }
+  #pinRow { justify-content:flex-start }
+  #wait .or { margin:22px 0 8px } #wait .err { color:var(--danger); min-height:1.4em; margin-top:6px }
+  #wait .pinrow .mini { padding:12px 18px; font-size:.95rem }
+  .seg { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin:2px 0 8px }
+  .seg button { border:0; background:transparent; color:var(--mut); padding:8px 4px; font-size:.8rem; font-weight:600; cursor:pointer }
+  .seg button + button { border-left:1px solid var(--line) }
+  .seg button:hover { color:var(--fg) } .seg button.on { background:var(--acc); color:#fff }
+  .modal { position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:16px; background:rgba(1,4,9,.7) }
+  .modal .box { width:min(380px,100%); background:var(--glass); border:1px solid var(--line); border-radius:10px; padding:20px }
+  .modal h3 { margin:0 0 6px; font-size:1.05rem } .modal p { margin:0 0 14px; color:var(--mut); font-size:.9rem }
+  .modal .in { width:100%; margin:8px 0 14px; padding:10px 12px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; font:inherit }
+  .modal .in:focus { outline:none; border-color:var(--acc) }
+  .mrow { display:flex; justify-content:flex-end; gap:8px } .modal .mini { padding:8px 16px; font-size:.88rem }
+  .mini.dng { background:var(--danger); border:0; color:#fff } .mini.dng:hover { filter:brightness(1.1); color:#fff }
+
+  @media (max-width:560px) {
+    .wrap { padding:0 14px } .pill .lbl { display:none } #qrbtn { display:none }
+    main > .card { padding:16px }
+    .tab { padding:10px 18px } #drop { padding:22px 14px } #drop .up { width:52px; height:52px }
+    .thumb { height:100px } .thumb svg.k { width:36px; height:36px }
+    #files { grid-template-columns:repeat(2,1fr); gap:12px }
+    .acts { padding:8px 10px 12px } .meta { padding:10px 10px 2px }
+    .ic.dl span { display:none }
+    textarea { min-height:100px }
+  }
+</style>
+</head>
+<body>
+<div id="veil"><div>Drop files to send</div></div>
+<div id="scrim"></div>
+<div id="offline">Can't reach the PC. Retrying…</div>
+<div class="full" id="gone"><div><h1>Access removed</h1><p>The owner of this PC has disconnected this device.</p></div></div>
+<div class="full" id="wait"><div><h1>Waiting for approval…</h1><p>Ask the owner of the PC to tap "Allow" for this device.</p>
+  <div id="joinBox" hidden><p class="or">or enter the 4-digit PIN</p>
+    <div class="pinrow"><span class="pw"><input class="pin" id="joinPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••" autocomplete="new-password"><button class="eye" type="button" aria-label="Show PIN"></button></span><button class="mini pri" id="joinBtn" type="button">Join</button></div>
+    <p class="err" id="joinErr"></p></div>
+</div></div>
+<div id="toast"><span id="tmsg"></span><button id="tact" hidden></button></div>
+<div id="lb"><div class="bar"><b id="lbn"></b><a class="mini pri" id="lbd" download>Download</a><button class="x" id="lbx" type="button" aria-label="Close">✕</button></div><div class="stage" id="lbs"></div><button class="nav prev" id="lbp" type="button" aria-label="Previous">‹</button><button class="nav next" id="lbnx" type="button" aria-label="Next">›</button><div class="pos" id="lbpos"></div></div>
+
+<div class="wrap">
+  <nav>
+    <div class="brand">
+      <img class="logo" src="/icon-192.png" alt="LAN Share" width="40" height="40">
+      <div><h1>LAN Share</h1><p>Phone ⇄ PC · no internet</p></div>
+    </div>
+    <div class="conn">
+    <button class="pill" id="themebtn" type="button" aria-label="Switch light/dark theme" title="Switch theme">
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <div class="conn" id="connect" hidden>
+      <button class="pill" id="qrbtn" data-open="qrpop" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20h.01M17 20v-3"/></svg>
+        <span class="lbl">Scan QR</span>
+      </button>
+      <button class="pill" id="connbtn" data-open="devpop" type="button"><span class="dot"></span><span id="host">Connected</span><span class="badge-n" id="pbadge" hidden></span></button>
+
+      <div class="pop" id="qrpop">
+        <div class="phead"><span>Scan to connect</span><button class="x" data-close type="button" aria-label="Close">✕</button></div>
+        <div id="qr"></div>
+        <p class="qh">Point your phone camera at the code<br>(phone must be on the same WiFi)</p>
+        <div class="qsep"><span>or open an address</span></div>
+        <div id="urls"></div>
+        <p class="qt">Tap an address to turn it into the QR code</p>
+      </div>
+
+      <div class="pop" id="devpop">
+        <div class="phead"><span>Devices</span><button class="x" data-close type="button" aria-label="Close">✕</button></div>
+        <div id="pend"></div>
+        <div class="devhead">Connected</div>
+        <div id="devs"></div>
+        <div id="blk"></div>
+        <div id="sett" hidden>
+          <div class="devhead">Settings</div>
+          <div class="set"><div>Ask before new devices join<small>You approve each phone on this PC</small></div><label class="sw"><input type="checkbox" id="askSw"><span></span></label></div>
+          <div id="pinBox" hidden>
+            <div class="set"><div>Require a 4-digit PIN<small>New devices can enter it to join without waiting</small></div><label class="sw"><input type="checkbox" id="pinSw"><span></span></label></div>
+            <div class="pinrow" id="pinRow" hidden>
+              <span class="pw"><input class="pin" id="pinIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="••••" autocomplete="new-password"><button class="eye" type="button" aria-label="Show PIN"></button></span>
+              <button class="mini pri" id="pinSave" type="button">Save PIN</button>
+            </div>
+          </div>
+          <div class="set"><div>Auto-delete files<small>Keeps storage tidy</small></div>
+          </div>
+          <div class="seg" id="cleanSeg"><button type="button" data-v="0">Never</button><button type="button" data-v="1">1 hour</button><button type="button" data-v="24">24 hours</button><button type="button" data-v="168">7 days</button></div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab on" data-tab="files" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Files <span class="count" id="count">0</span>
+        </button>
+        <button class="tab" data-tab="text" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14M12 5v14M9 19h6"/></svg>
+          Text <span class="count" id="chars"></span>
+        </button>
+      </div>
+
+      <div class="sendbar" id="sendbar" hidden>
+        <span class="sl">Send to</span>
+        <div class="chips" id="sendChips"></div>
+      </div>
+
+      <div class="panel" id="p-files">
+        <div id="drop">
+          <div class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
+          <div><b>Tap to choose files</b><span>Send photos, videos and documents<span class="desk"> · drag &amp; drop or press Ctrl+V</span></span><span class="into" id="into" hidden></span></div>
+        </div>
+        <input id="pick" type="file" multiple hidden>
+        <div id="uq"></div>
+        <div class="tools">
+          <div class="chips" id="chips"></div>
+          <div class="seg sortseg" id="sortSeg" title="Sort files"><button type="button" data-v="new">Newest</button><button type="button" data-v="name">Name</button><button type="button" data-v="size">Size</button></div>
+          <div class="seg viewseg" id="viewSeg" title="Change view">
+            <button type="button" data-v="grid" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></svg></button>
+            <button type="button" data-v="list" aria-label="List view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          </div>
+          <button class="mini" id="newFolder" type="button">New folder</button>
+          <button class="mini" id="selBtn" type="button" hidden>Select</button>
+        </div>
+        <div id="crumbs" hidden>
+          <button class="mini" id="crBack" type="button">‹ All files</button>
+          <b id="crName"></b>
+          <button class="mini" id="crRen" type="button">Rename</button>
+          <button class="mini red" id="crDel" type="button">Delete folder</button>
+        </div>
+        <div id="selbar" hidden>
+          <div class="sb1"><b id="selTxt">0 selected</b>
+            <button class="mini" id="selAll" type="button">All</button>
+            <button class="mini" id="selCancel" type="button">Cancel</button></div>
+          <div class="sb2">
+            <button class="mini pri" id="selDl" type="button">Download</button>
+            <button class="mini" id="selZip" type="button">.zip</button>
+            <button class="mini" id="selMove" type="button">Move</button>
+            <button class="mini red" id="selDel" type="button">Delete</button></div>
+        </div>
+        <div id="files"></div>
+        <div class="foot"><span id="used"></span><button class="mini red" id="clearAll" type="button" hidden>Clear all</button></div>
+      </div>
+
+      <div class="panel" id="p-text" hidden>
+        <textarea id="text" maxlength="100000" placeholder="Paste a link or note. It shows up on every device."></textarea>
+        <div class="row"><button class="btn" id="save">Add</button></div>
+        <div class="hint"><span class="desk">Tip: press Ctrl+Enter to add quickly.</span><span id="cnt"></span></div>
+        <div id="snips"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/qrcode.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const S = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICON = {
+  image: S('<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>'),
+  video: S('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/>'),
+  audio: S('<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+  doc: S('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'),
+  archive: S('<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>'),
+  other: S('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>')
+};
+const GRAD = { image:'#06b6d4,#3b82f6', video:'#ec4899,#8b5cf6', audio:'#fb923c,#f43f5e', doc:'#6366f1,#3b82f6', archive:'#f59e0b,#f97316', other:'#64748b,#475569' };
+const LABEL = { all:'All', image:'Images', video:'Videos', audio:'Audio', doc:'Documents', archive:'Archives', other:'Other' };
+const DL = S('<path d="M12 4v12m0 0l-4-4m4 4l4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>');
+const TR = S('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/>');
+const CHK = S('<path d="M5 12l5 5 9-10"/>');
+const PC = S('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>');
+const PH = S('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>');
+
+const kind = n => {
+  const e = (n.split('.').pop() || '').toLowerCase();
+  if (/^(png|jpe?g|gif|webp|bmp|svg|heic|avif)$/.test(e)) return 'image';
+  if (/^(mp4|mov|mkv|avi|webm|3gp)$/.test(e)) return 'video';
+  if (/^(mp3|wav|m4a|aac|flac|ogg)$/.test(e)) return 'audio';
+  if (/^(pdf|docx?|xlsx?|pptx?|txt|csv|md|rtf|odt)$/.test(e)) return 'doc';
+  if (/^(zip|rar|7z|tar|gz)$/.test(e)) return 'archive';
+  return 'other';
+};
+const canPreview = n => { const e = n.split('.').pop().toLowerCase(); return /^(png|jpe?g|gif|webp|svg|bmp|avif|mp4|webm|mov|mp3|wav|m4a|ogg|aac|flac|pdf|txt)$/.test(e); };
+const ext = n => (n.includes('.') ? n.split('.').pop() : 'file').slice(0, 5).toUpperCase();
+const fmt = b => b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : b < 1073741824 ? (b/1048576).toFixed(1) + ' MB' : (b/1073741824).toFixed(2) + ' GB';
+const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? Math.floor(s/60) + ' min ago' : s < 86400 ? Math.floor(s/3600) + ' h ago' : Math.floor(s/86400) + ' d ago'; };
+const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const fileUrl = (n, inline) => '/files/' + encodeURIComponent(n) + (inline ? '?inline=1' : '');
+
+/* ---------- toast (with optional action) ---------- */
+let toastT;
+function toast(msg, label, fn, ms) {
+  $('tmsg').textContent = msg;
+  const b = $('tact'); b.hidden = !label; if (label) { b.textContent = label; b.onclick = () => { fn(); $('toast').classList.remove('show'); }; }
+  $('toast').classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('show'), ms || 2200);
+}
+
+/* ---------- state ---------- */
+let all = [], snips = [], filter = 'all', selecting = false, isHost = false;
+let curFolder = '', folders = [], me = '', devs = [], sendTo = '';
+const FOLDER_ICON = S('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>').replace('<svg', '<svg class="k"');
+const LOCK = S('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>');
+/* "Private · to Bob" / "Private · from Alice" label for files and notes sent to one device */
+function privLabel(x) {
+  const el = document.createElement('div');
+  const mineSent = x.from === me, toMe = x.to === me;
+  const t = mineSent ? 'to ' + (x.toName || 'a device') : toMe ? 'from ' + (x.fromName || 'a device') : (x.fromName || 'a device') + ' → ' + (x.toName || 'a device');
+  el.innerHTML = LOCK + '<span></span>'; el.querySelector('span').textContent = 'Private · ' + t; return el;
+}
+let viewMode = lsGet('view') === 'list' ? 'list' : 'grid';
+let sortBy =['new', 'name', 'size'].includes(lsGet('sort')) ? lsGet('sort') : 'new';
+const sel = new Set(), pendingDel = new Map(), rendered = new Set(), mine = new Set();
+let known = null, knownSnips = null, newFiles = 0, newTexts = 0, tab = 'files';
+let sigFiles = '', sigSnips = '', sigDev = '', sigSet = '', sigDevSend = '';
+
+/* ---------- tabs ---------- */
+function showTab(t) {
+  tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  $('p-files').hidden = t !== 'files'; $('p-text').hidden = t !== 'text';
+  if (t === 'files') newFiles = 0; else newTexts = 0;
+  badges(); lsSet('tab', t);
+}
+function badges() {
+  const nf = all.filter(f => !pendingDel.has(f.name)).length, ns = snips.filter(s => !pendingDel.has('s:' + s.id)).length;
+  $('count').textContent = newFiles ? '+' + newFiles : (nf || ''); $('count').classList.toggle('new', !!newFiles);
+  $('chars').textContent = newTexts ? '+' + newTexts : (ns || ''); $('chars').classList.toggle('new', !!newTexts);
+}
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+/* ---------- side panels ---------- */
+const popOpen = id => {
+  if (id !== 'devpop' && typeof hasPin !== 'undefined' && !hasPin && pinEditing) { pinEditing = false; $('pinIn').value = ''; drawPin(); }   // don't leave a half-set PIN switch on
+  document.querySelectorAll('.pop').forEach(p => p.classList.toggle('open', p.id === id));
+  $('scrim').classList.toggle('open', !!id);
+};
+document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => popOpen($(b.dataset.open).classList.contains('open') ? null : b.dataset.open));
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => popOpen(null));
+$('scrim').onclick = () => popOpen(null);
+
+/* ---------- connect info ---------- */
+fetch('/api/info').then(r => r.json()).then(d => {
+  if (!d.urls.length) return;
+  const opts = [...d.urls.map(u => ({ u, tag: 'IP address' })), ...(d.names || []).map(u => ({ u, tag: 'PC name, survives IP changes' })),
+    ...(d.secure || []).map(u => ({ u, tag: 'Encrypted · accept the one-time warning' }))];
+  const draw = sel => {
+    const qr = qrcode(0, 'M'); qr.addData(sel); qr.make();
+    $('qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0 });
+    $('urls').querySelectorAll('.addr').forEach(a => a.classList.toggle('on', a.dataset.u === sel));
+  };
+  $('urls').innerHTML = '';
+  opts.forEach(o => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'addr'; b.dataset.u = o.u;
+    b.innerHTML = '<b></b><small></small>'; b.firstChild.textContent = o.u; b.lastChild.textContent = o.tag;
+    b.onclick = () => draw(o.u); $('urls').append(b);
+  });
+  draw(d.urls[0]);
+  $('connect').hidden = false;
+}).catch(() => {});
+
+/* ---------- files ---------- */
+function render() {
+  const visible = all.filter(f => !pendingDel.has(f.name));
+  badges();
+  const counts = { all: visible.length }; visible.forEach(f => counts[kind(f.name)] = (counts[kind(f.name)] || 0) + 1);
+  if (filter !== 'all' && !counts[filter]) filter = 'all';
+  $('chips').innerHTML = ''; $('chips').hidden = !visible.length;
+  Object.keys(LABEL).filter(k => k === 'all' || counts[k]).forEach(k => {
+    const b = document.createElement('button'); b.className = 'chip' + (k === filter ? ' on' : ''); b.textContent = LABEL[k] + (k === 'all' ? '' : ' ' + counts[k]);
+    b.onclick = () => { filter = k; render(); }; $('chips').append(b);
+  });
+  for (const n of [...sel]) if (!visible.some(f => f.name === n)) sel.delete(n);
+  $('selBtn').hidden = !visible.length || selecting;
+  $('selbar').hidden = !selecting; $('files').classList.toggle('selecting', selecting);
+  $('selTxt').textContent = sel.size + ' selected';
+  $('used').textContent = visible.length ? `${visible.length} file${visible.length > 1 ? 's' : ''} · ${fmt(visible.reduce((s, f) => s + f.size, 0))}` : '';
+  $('clearAll').hidden = !isHost || !visible.length;
+
+  const flat = filter !== 'all';                       // a type filter searches across every folder
+  if (curFolder && !folders.some(f => f.name === curFolder)) curFolder = '';
+  const list = visible.filter(f => flat ? kind(f.name) === filter : (curFolder ? f.folder === curFolder : !f.folder));
+  const showFolders = (!flat && !curFolder) ? folders.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })) : [];
+  $('crumbs').hidden = !curFolder || flat; $('crName').textContent = curFolder;
+  $('newFolder').hidden = !!curFolder || flat || selecting;
+  $('into').hidden = !curFolder; $('into').textContent = curFolder ? 'Uploads go into “' + curFolder + '”' : '';
+  if (sortBy === 'name') list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+  else if (sortBy === 'size') list.sort((a, b) => b.size - a.size);
+  else list.sort((a, b) => b.time - a.time);
+  shownList = list;
+  $('files').classList.toggle('list', viewMode === 'list');
+  $('viewSeg').hidden = !visible.length;
+  $('viewSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === viewMode));
+  $('sortSeg').hidden = visible.length < 2;
+  $('sortSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === sortBy));
+  const box = $('files'); box.innerHTML = '';
+  if (!list.length && !showFolders.length) {
+    box.innerHTML = `<div class="empty">${S('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>')}<b>${curFolder ? 'This folder is empty' : visible.length ? 'No matching files' : 'No files yet'}</b>${curFolder ? 'Upload here, or move files in with Select → Move.' : visible.length ? 'Try another filter.' : 'Send one from any device.'}</div>`;
+    return;
+  }
+  showFolders.forEach(fo => {
+    const card = document.createElement('div'); card.className = 'file folder';
+    const th = document.createElement('div'); th.className = 'thumb pv'; th.innerHTML = FOLDER_ICON;
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = fo.name; nm.title = fo.name;
+    const sb = document.createElement('div'); sb.className = 'sub'; sb.textContent = fo.count + (fo.count === 1 ? ' file' : ' files');
+    meta.append(nm, sb); card.append(th, meta);
+    card.tabIndex = 0; card.setAttribute('role', 'button');
+    card.onclick = () => { if (selecting) return toast('Select files to move them into a folder'); curFolder = fo.name; render(); scrollTo({ top: 0 }); };
+    card.onkeydown = e => { if (e.key === 'Enter') card.click(); };
+    box.append(card);
+  });
+  list.forEach(f => {
+    const k = kind(f.name), url = fileUrl(f.name);
+    const card = document.createElement('div'); card.className = 'file' + (rendered.has(f.name) ? '' : ' new') + (sel.has(f.name) ? ' sel' : ''); rendered.add(f.name);
+    const th = document.createElement('div'); th.className = 'thumb' + (canPreview(f.name) ? ' pv' : ''); th.style.background = `linear-gradient(135deg,${GRAD[k]})`;
+    th.innerHTML = ICON[k].replace('<svg', '<svg class="k"');
+    if (k === 'image') { const im = document.createElement('img'); im.src = fileUrl(f.name, true); im.loading = 'lazy'; im.alt = ''; im.onerror = () => im.remove(); th.append(im); }
+    if (k === 'video' && /\.(mp4|webm|mov)$/i.test(f.name)) { const v = document.createElement('video'); v.src = fileUrl(f.name, true) + '#t=0.1'; v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.onerror = () => v.remove(); th.append(v); }
+    if (k === 'video') th.insertAdjacentHTML('beforeend', '<div class="play"><svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>');
+    th.insertAdjacentHTML('beforeend', `<span class="badge">${ext(f.name)}</span><span class="tick">${CHK}</span>`);
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const nm = document.createElement('div'); nm.className = 'name'; nm.textContent = f.name; nm.title = f.name;
+    const sb = document.createElement('div'); sb.className = 'sub'; sb.textContent = fmt(f.size) + ' · ' + ago(f.time);
+    meta.append(nm, sb);
+    if (f.to) { const pv = privLabel(f); pv.classList.add('priv'); meta.append(pv); }
+    if (flat && f.folder) { const fl = document.createElement('div'); fl.className = 'sub infolder'; fl.textContent = 'in ' + f.folder; meta.append(fl); }
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const a = document.createElement('a'); a.className = 'ic dl'; a.href = url; a.download = f.name; a.innerHTML = DL + '<span>Download</span>';
+    const x = document.createElement('button'); x.className = 'ic del'; x.title = 'Delete'; x.innerHTML = TR; x.onclick = () => deleteFiles([f.name]);
+    acts.append(a, x);
+    card.onclick = e => {
+      if (selecting) { sel.has(f.name) ? sel.delete(f.name) : sel.add(f.name); card.classList.toggle('sel', sel.has(f.name)); $('selTxt').textContent = sel.size + ' selected'; return; }
+      if (e.target.closest('.thumb') && canPreview(f.name)) preview(f.name);
+    };
+    card.append(th, meta, acts); box.append(card);
+  });
+}
+
+$('viewSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; viewMode = b.dataset.v; lsSet('view', viewMode); render(); };
+$('sortSeg').onclick =e => { const b = e.target.closest('button'); if (!b) return; sortBy = b.dataset.v; lsSet('sort', sortBy); render(); };
+
+/* ---------- folders ---------- */
+const fapi = async (method, q) => { try { const r = await fetch('/api/folder?' + q, { method }); return { ok: r.ok, status: r.status, ...(await r.json().catch(() => ({}))) }; } catch (e) { return { ok: false, status: 0 }; } };
+async function makeFolder() {
+  const n = await ask({ title: 'New folder', input: '', max: 40, ok: 'Create' });
+  if (n === null || n === false || !String(n).trim()) return null;
+  const r = await fapi('POST', 'name=' + encodeURIComponent(String(n).trim()));
+  if (r.status === 409 && r.name) { toast('That folder already exists'); return r.name; }
+  if (!r.ok) { toast('Could not create the folder'); return null; }
+  await refresh(); return r.name;
+}
+$('newFolder').onclick = async () => { const n = await makeFolder(); if (n) { curFolder = n; render(); } };
+$('crBack').onclick = () => { curFolder = ''; selecting = false; sel.clear(); render(); };
+$('crRen').onclick = async () => {
+  const n = await ask({ title: 'Rename folder', input: curFolder, max: 40, ok: 'Save' });
+  if (n === null || n === false || !String(n).trim() || String(n).trim() === curFolder) return;
+  const r = await fapi('PATCH', 'name=' + encodeURIComponent(curFolder) + '&to=' + encodeURIComponent(String(n).trim()));
+  if (r.status === 409) return toast('A folder with that name exists');
+  if (!r.ok) return toast('Could not rename');
+  curFolder = r.name; await refresh(); render();
+};
+$('crDel').onclick = async () => {
+  if (!await ask({ title: 'Delete folder “' + curFolder + '”?', msg: 'The files inside are kept and move back to All files.', ok: 'Delete folder', danger: true })) return;
+  const r = await fapi('DELETE', 'name=' + encodeURIComponent(curFolder));
+  if (!r.ok) return toast('Could not delete the folder');
+  curFolder = ''; toast('Folder deleted'); await refresh(); render();
+};
+/* "Move to…" picker: a folder, a new folder, or back to the top level. Resolves to a folder name, '' (top level) or null (cancel). */
+function pickFolder(count) {
+  return new Promise(res => {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = '<div class="box" role="dialog"><h3></h3><div class="fl"></div><div class="mrow"><button type="button" class="mini c">Cancel</button></div></div>';
+    m.querySelector('h3').textContent = 'Move ' + count + (count === 1 ? ' file' : ' files') + ' to…';
+    const done = v => { document.removeEventListener('keydown', key, true); m.remove(); res(v); };
+    const key = e => { if (e.key === 'Escape') { e.stopPropagation(); done(null); } };
+    document.addEventListener('keydown', key, true);
+    const fl = m.querySelector('.fl');
+    const add = (label, val, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'fopt ' + (cls || ''); b.innerHTML = (cls === 'new' ? '+' : FOLDER_ICON) + '<span></span>'; b.querySelector('span').textContent = label; b.onclick = () => done(val); fl.append(b); return b; };
+    add('New folder…', '__new__', 'new');
+    if (curFolder) add('All files (top level)', '', 'top');
+    folders.filter(f => f.name !== curFolder).forEach(f => add(f.name, f.name));
+    m.querySelector('.c').onclick = () => done(null);
+    m.onclick = e => { if (e.target === m) done(null); };
+    document.body.append(m); (fl.querySelector('button') || m.querySelector('.c')).focus();
+  });
+}
+$('selMove').onclick = async () => {
+  if (!sel.size) return toast('Select some files first');
+  let target = await pickFolder(sel.size);
+  if (target === null) return;
+  if (target === '__new__') { target = await makeFolder(); if (!target) return; }
+  const names = [...sel];
+  try {
+    const r = await fetch('/api/move', { method: 'POST', body: JSON.stringify({ names, folder: target }) });
+    if (!r.ok) throw 0;
+  } catch (e) { return toast('Could not move the files'); }
+  toast(names.length + (names.length === 1 ? ' file moved' : ' files moved') + (target ? ' to “' + target + '”' : ' to All files'));
+  selecting = false; sel.clear(); await refresh(); render();
+};
+
+/* ---------- send to one device ---------- */
+function renderSend() {
+  const others = devs.filter(d => !d.me);
+  if (sendTo && !others.some(d => d.id === sendTo)) sendTo = '';
+  $('sendbar').hidden = !others.length;
+  const box = $('sendChips'); box.innerHTML = '';
+  const chip = (label, id) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip' + (sendTo === id ? ' on' : ''); b.textContent = label; b.onclick = () => { sendTo = id; renderSend(); }; box.append(b); };
+  chip('Everyone', '');
+  others.forEach(d => chip(d.name, d.id));
+}
+
+/* selection */
+$('selBtn').onclick = () => { selecting = true; render(); };
+$('selCancel').onclick = () => { selecting = false; sel.clear(); render(); };
+$('selAll').onclick = () => { shownList.forEach(f => sel.add(f.name)); render(); };
+$('selZip').onclick = () => { if (!sel.size) return toast('Select some files first'); const f = document.createElement('form'); f.method = 'POST'; f.action = '/api/zip'; f.hidden = true; const i = document.createElement('input'); i.name = 'names'; i.value = JSON.stringify([...sel]); f.append(i); document.body.append(f); f.submit(); f.remove(); toast('Preparing .zip…'); };
+$('selDl').onclick = () => {
+  if (!sel.size) return toast('Select some files first');
+  const names = [...sel];
+  names.forEach((n, i) => setTimeout(() => {
+    const a = document.createElement('a'); a.href = '/files/' + encodeURIComponent(n); a.download = n;
+    document.body.appendChild(a); a.click(); a.remove();
+  }, i * 350));
+  toast('Downloading ' + names.length + ' file' + (names.length > 1 ? 's' : '') + '…');
+};
+addEventListener('keydown', e => {                           // select-mode shortcuts: Ctrl+A, Delete, Esc
+  if (!selecting || (e.target.matches && e.target.matches('input,textarea,select'))) return;
+  if ($('lb').classList.contains('on') || document.querySelector('.modal') || document.querySelector('.pop.open')) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') { e.preventDefault(); $('selAll').click(); }
+  else if (e.key === 'Delete') { e.preventDefault(); $('selDel').click(); }
+  else if (e.key === 'Escape') $('selCancel').click();
+});
+$('selDel').onclick =() => { if (!sel.size) return toast('Select some files first'); const n = [...sel]; selecting = false; sel.clear(); deleteFiles(n); };
+$('clearAll').onclick = async () => {
+  if (!await ask({ title: 'Delete all files?', msg: 'This removes every file for everyone and cannot be undone.', ok: 'Delete all', danger: true })) return;
+  await fetch('/api/clear', { method: 'POST' }); toast('All files deleted'); refresh();
+};
+
+/* delete with undo */
+function deleteFiles(names) {
+  names.forEach(n => pendingDel.set(n, setTimeout(() => commitDelete(n), 6000)));
+  render();
+  toast(names.length > 1 ? names.length + ' files deleted' : 'Deleted ' + names[0], 'Undo', () => {
+    names.forEach(n => { clearTimeout(pendingDel.get(n)); pendingDel.delete(n); }); render();
+  }, 6000);
+}
+async function commitDelete(n) {
+  if (!pendingDel.has(n)) return;
+  try { await fetch(fileUrl(n), { method: 'DELETE' }); } catch (e) {}
+  pendingDel.delete(n); refresh();
+}
+addEventListener('pagehide', e => { if (e.persisted) return; /* just backgrounded on a phone: timers keep going */ for (const n of pendingDel.keys()) fetch(n.startsWith('s:') ? '/api/snippet?id=' + encodeURIComponent(n.slice(2)) : fileUrl(n), { method: 'DELETE', keepalive: true }); });
+
+/* preview */
+let shownList = [], pvList = [], pvIdx = 0;
+function preview(n, keepList) {
+  if (!keepList) { pvList = shownList.filter(f => canPreview(f.name)).map(f => f.name); if (!pvList.includes(n)) pvList = [n]; }
+  pvIdx = pvList.indexOf(n);
+  $('lbp').hidden = $('lbnx').hidden = pvList.length < 2;
+  $('lbpos').textContent = pvList.length > 1 ? (pvIdx + 1) + ' / ' + pvList.length : '';
+  const k = kind(n), u = fileUrl(n, true), e = n.split('.').pop().toLowerCase(), st = $('lbs'); st.innerHTML = '';
+  let el;
+  if (k === 'image') { el = document.createElement('img'); el.src = u; }
+  else if (k === 'video') { el = document.createElement('video'); el.src = u; el.controls = true; el.autoplay = true; el.playsInline = true; }
+  else if (k === 'audio') { el = document.createElement('audio'); el.src = u; el.controls = true; el.autoplay = true; }
+  else { el = document.createElement('iframe'); el.src = u; }
+  st.append(el); $('lbn').textContent = n; $('lbd').href = fileUrl(n); $('lbd').setAttribute('download', n); $('lb').classList.add('on');
+}
+const closeLb = () => { $('lb').classList.remove('on'); $('lbs').innerHTML = ''; };
+const stepLb = d => { if (pvList.length < 2 || !$('lb').classList.contains('on')) return; preview(pvList[(pvIdx + d + pvList.length) % pvList.length], true); };
+$('lbp').onclick = () => stepLb(-1); $('lbnx').onclick = () => stepLb(1);
+addEventListener('keydown', e => { if ($('lb').classList.contains('on')) { if (e.key === 'ArrowLeft') stepLb(-1); else if (e.key === 'ArrowRight') stepLb(1); } });
+let sx = null;
+$('lbs').addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+$('lbs').addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 60) stepLb(dx < 0 ? 1 : -1); }, { passive: true });
+$('lbx').onclick = closeLb; $('lb').onclick = e => { if (e.target === $('lb') || e.target === $('lbs')) closeLb(); };
+
+/* ---------- upload queue ---------- */
+const queue = []; let running = false, uid = 0, batchOk = 0, batchErr = 0;
+function enqueue(files) {
+  files = files.filter(f => f && f.size >= 0);
+  if (!files.length) return;
+  showTab('files');
+  files.forEach(f => { const it = { id: ++uid, file: f, state: 'wait', pct: 0, xhr: null, to: sendTo, folder: curFolder }; queue.push(it); });
+  drawQ(); pump();
+}
+function drawQ() {
+  const box = $('uq'); box.innerHTML = '';
+  queue.forEach(it => {
+    const d = document.createElement('div'); d.className = 'u' + (it.state === 'err' ? ' err' : '');
+    const label = it.state === 'wait' ? 'Waiting…' : it.state === 'up' ? it.pct + '%' : it.state === 'err' ? (it.full ? 'PC is full' : 'Failed') : 'Done';
+    d.innerHTML = `<div class="n"></div><div class="ac"><span class="s">${label}</span></div><div class="bar"><i style="width:${it.pct}%"></i></div>`;
+    d.querySelector('.n').textContent = it.file.name + ' · ' + fmt(it.file.size);
+    const ac = d.querySelector('.ac');
+    if (it.state === 'err') { const r = document.createElement('button'); r.className = 'mini'; r.textContent = 'Retry'; r.onclick = () => { it.state = 'wait'; it.pct = 0; drawQ(); pump(); }; ac.append(r); }
+    if (it.state === 'wait' || it.state === 'up' || it.state === 'err') { const c = document.createElement('button'); c.className = 'mini red'; c.textContent = it.state === 'err' ? 'Remove' : 'Cancel'; c.onclick = () => { queue.splice(queue.indexOf(it), 1); if (it.xhr) it.xhr.abort(); dropPartial(it); drawQ(); pump(); }; ac.append(c); }
+    box.append(d);
+  });
+}
+function pump() {
+  if (running) return;
+  const it = queue.find(q => q.state === 'wait');
+  if (!it) {
+    if (batchOk && !queue.some(q => q.state === 'err')) { toast(batchOk > 1 ? batchOk + ' files sent' : 'File sent'); }
+    if (batchErr) toast('Some files failed. Tap Retry.', null, null, 3500);
+    batchOk = batchErr = 0; return;
+  }
+  running = true; it.state = 'up'; drawQ();
+  const end = ok => {
+    running = false; it.xhr = null;
+    if (!queue.includes(it)) { pump(); return; }
+    if (ok) { it.state = 'done'; batchOk++; drawQ(); setTimeout(() => { const i = queue.indexOf(it); if (i >= 0) queue.splice(i, 1); drawQ(); }, 1200); refresh(); }
+    else { it.state = 'err'; batchErr++; drawQ(); }
+    pump();
+  };
+  uploadResumable(it).then(name => { if (name) mine.add(name); end(true); }).catch(() => end(false));
+}
+
+/* Resumable upload: the file goes up in 4 MB chunks. If the WiFi drops, it retries and carries on from the
+   byte the PC already has (also after tapping Retry), instead of starting again. */
+const CHUNK = 4 * 1024 * 1024, sleep = ms => new Promise(r => setTimeout(r, ms));
+const upId = (f, uidn) => { let h = 5381; for (const c of f.name + '|' + f.size + '|' + f.lastModified) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return 'u' + h.toString(36) + (uidn ? '-' + uidn : ''); };
+function setProg(it, bytes, msg) {
+  it.pct = it.file.size ? Math.min(100, Math.round(bytes / it.file.size * 100)) : 0;
+  const i = $('uq').querySelectorAll('.u')[queue.indexOf(it)];
+  if (i) { i.querySelector('.bar i').style.width = it.pct + '%'; i.querySelector('.s').textContent = msg || it.pct + '%'; }
+}
+const serverSize = async (id, fallback) => { try { return (await (await fetch('/api/chunk?id=' + id)).json()).size || 0; } catch (e) { return fallback; } };
+function putChunk(it, id, off, blob) {
+  return new Promise((ok, bad) => {
+    const x = new XMLHttpRequest(); it.xhr = x;
+    x.open('PUT', '/api/chunk?id=' + id + '&offset=' + off);
+    x.timeout = 90000;   // a dead WiFi link can otherwise hang forever instead of retrying
+    x.upload.onprogress = e => setProg(it, off + e.loaded);
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} x.status === 200 ? ok(j) : bad({ status: x.status, size: j.size }); };
+    x.onerror = x.ontimeout = () => bad({ net: true });
+    x.onabort = () => bad({ aborted: true });
+    x.send(blob);
+  });
+}
+async function uploadResumable(it) {
+  const f = it.file, id = it.sid || (it.sid = upId(f, queue.some(q => q !== it && q.sid === upId(f)) ? it.id : 0));
+  let size = await serverSize(id, 0); if (size > f.size) size = 0;
+  setProg(it, size);
+  let fails = 0, first = true;
+  while (first || size < f.size) {
+    first = false;
+    try {
+      const j = await putChunk(it, id, size, f.slice(size, Math.min(size + CHUNK, f.size)));
+      size = j.size; fails = 0; setProg(it, size);
+    } catch (e) {
+      if (e.aborted || !queue.includes(it)) throw e;
+      if (e.status === 507) { it.full = true; throw e; }   // PC out of disk space: retrying won't help
+      if (++fails > 8) throw e;
+      if (e.status === 409 && typeof e.size === 'number') { size = e.size; continue; }
+      setProg(it, size, 'Reconnecting…');
+      await sleep(Math.min(1000 * 2 ** (fails - 1), 8000));
+      size = await serverSize(id, size); first = true;
+    }
+  }
+  const r = await fetch('/api/finish?id=' + id + '&total=' + f.size + '&name=' + encodeURIComponent(f.name) + (it.to ? '&to=' + encodeURIComponent(it.to) : '') + (it.folder ? '&folder=' + encodeURIComponent(it.folder) : ''), { method: 'POST' });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.name) throw new Error('finish');
+  return j.name;
+}
+const dropPartial = it => { if (it.sid) fetch('/api/chunk?id=' + it.sid, { method: 'DELETE' }).catch(() => {}); };
+$('drop').onclick = () => $('pick').click();
+$('pick').onchange = e => { enqueue([...e.target.files]); e.target.value = ''; };
+let dc = 0;
+addEventListener('dragenter', e => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { dc++; document.body.classList.add('dragging'); } });
+addEventListener('dragleave', () => { if (--dc <= 0) { dc = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => { e.preventDefault(); dc = 0; document.body.classList.remove('dragging'); enqueue([...e.dataTransfer.files]); });
+addEventListener('paste', e => {
+  const fs = [...(e.clipboardData?.files || [])];
+  if (!fs.length) return;
+  e.preventDefault();
+  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
+  enqueue(fs.map((f, i) => /^image\.(png|jpe?g)$/i.test(f.name) ? new File([f], `pasted-${stamp}${fs.length > 1 ? '-' + (i + 1) : ''}.${f.name.split('.').pop()}`, { type: f.type }) : f));
+});
+
+/* ---------- text snippets ---------- */
+const urlRe = /https?:\/\/[^\s<>"']+/;
+function renderSnips() {
+  const box = $('snips'); box.innerHTML = '';
+  const list = snips.filter(s => !pendingDel.has('s:' + s.id));
+  badges();
+  if (!list.length) { box.innerHTML = '<div class="empty" style="padding:30px 0"><b>No text yet</b>Add a link or note above.</div>'; return; }
+  list.forEach(s => {
+    const d = document.createElement('div'); d.className = 'snip' + (s.fresh ? ' new' : '');
+    const pre = document.createElement('pre'); pre.textContent = s.text;
+    const r = document.createElement('div'); r.className = 'r';
+    const t = document.createElement('small'); t.textContent = ago(s.time);
+    const cp = document.createElement('button'); cp.className = 'mini'; cp.textContent = 'Copy';
+    cp.onclick = async () => { try { await navigator.clipboard.writeText(s.text); } catch (e) { const ta = document.createElement('textarea'); ta.value = s.text; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); } toast('Copied'); };
+    r.append(t);
+    const m = s.text.match(urlRe);
+    if (m) { const o = document.createElement('a'); o.className = 'mini pri'; o.textContent = 'Open'; o.href = m[0]; o.target = '_blank'; o.rel = 'noopener'; o.style.textDecoration = 'none'; r.append(o); }
+    const dl = document.createElement('button'); dl.className = 'mini red'; dl.textContent = 'Delete'; dl.onclick = () => deleteSnip(s);
+    r.append(cp, dl); d.append(pre); if (s.to) { const pv = privLabel(s); pv.classList.add('priv'); d.append(pv); } d.append(r); box.append(d);
+  });
+}
+function deleteSnip(s) {
+  const key = 's:' + s.id;
+  pendingDel.set(key, setTimeout(async () => {
+    if (!pendingDel.has(key)) return;
+    try { await fetch('/api/snippet?id=' + encodeURIComponent(s.id), { method: 'DELETE' }); } catch (e) {}
+    pendingDel.delete(key); refresh();
+  }, 6000));
+  renderSnips();
+  toast('Text deleted', 'Undo', () => { clearTimeout(pendingDel.get(key)); pendingDel.delete(key); renderSnips(); }, 6000);
+}
+
+/* ---------- devices panel ---------- */
+const act = async (a, ip, msg) => { await fetch('/api/' + a + '?ip=' + encodeURIComponent(ip), { method: 'POST' }); toast(msg); refresh(); };
+function renderDevices(d) {
+  const sig = JSON.stringify([d.devices, d.waiting, d.blocked, d.isHost]);
+  if (sig === sigDev) return; sigDev = sig;
+  const pb = $('pbadge'); const np = (d.waiting || []).length; pb.hidden = !np; pb.textContent = np;
+  const pend = $('pend'); pend.innerHTML = '';
+  if (np) {
+    pend.innerHTML = '<div class="devhead warn">Waiting for approval</div>';
+    d.waiting.forEach(v => {
+      const row = document.createElement('div'); row.className = 'dev';
+      row.innerHTML = `<div class="ico">${/iPhone|Android|iPad/.test(v.name) ? PH : PC}</div><div class="nm"><b></b><small></small></div>`;
+      row.querySelector('b').textContent = v.name; row.querySelector('small').textContent = v.ip;
+      const ok = document.createElement('button'); ok.className = 'mini ok'; ok.textContent = 'Allow'; ok.onclick = () => act('approve', v.ip, 'Allowed ' + v.name);
+      const no = document.createElement('button'); no.className = 'mini red'; no.textContent = 'Deny'; no.onclick = () => act('deny', v.ip, 'Denied ' + v.name);
+      row.append(ok, no); pend.append(row);
+    });
+  }
+  const box = $('devs'); box.innerHTML = '';
+  d.devices.forEach(v => {
+    const row = document.createElement('div'); row.className = 'dev';
+    row.innerHTML = `<div class="ico">${/iPhone|Android|iPad/.test(v.name) ? PH : PC}</div><div class="nm"><b></b><small></small></div>`;
+    row.querySelector('b').textContent = v.name;
+    if (v.me) row.querySelector('b').insertAdjacentHTML('beforeend', '<span class="tag">You</span>');
+    row.querySelector('small').textContent = v.host ? 'Hosting' : v.ip;
+    if (v.me) {
+      const rn = document.createElement('button'); rn.className = 'mini'; rn.textContent = 'Rename';
+      rn.onclick = async () => { const n = await ask({ title: 'Rename this device', input: lsGet('devname') || v.name, ok: 'Save' }); if (n !== null && n !== false) { lsSet('devname', String(n).trim().slice(0, 30)); refresh(); } };
+      row.append(rn);
+    } else if (d.isHost && !v.host) {
+      const rv = document.createElement('button'); rv.className = 'mini'; rv.textContent = 'Revoke'; rv.title = 'Disconnect for 10 minutes';
+      rv.onclick = () => act('revoke', v.ip, 'Disconnected ' + v.name + ' for 10 min');
+      const bl = document.createElement('button'); bl.className = 'mini red'; bl.textContent = 'Block'; bl.title = 'Block until you allow again';
+      bl.onclick = async () => { if (await ask({ title: 'Block ' + v.name + '?', msg: v.ip + ' stays blocked until you allow it again.', ok: 'Block', danger: true })) act('block', v.ip, 'Blocked ' + v.name); };
+      row.append(rv, bl);
+    }
+    box.append(row);
+  });
+  const bk = $('blk'); bk.innerHTML = '';
+  if (d.isHost && d.blocked && d.blocked.length) {
+    bk.innerHTML = '<div class="devhead red">Blocked</div>';
+    d.blocked.forEach(b => {
+      const row = document.createElement('div'); row.className = 'dev';
+      row.innerHTML = '<div class="nm"><b></b><small></small></div>';
+      row.querySelector('b').textContent = b.ip; row.querySelector('small').textContent = b.permanent ? 'Blocked' : 'Revoked · ' + b.mins + ' min left';
+      const ub = document.createElement('button'); ub.className = 'mini'; ub.textContent = 'Allow'; ub.onclick = () => act('unblock', b.ip, 'Allowed again');
+      row.append(ub); bk.append(row);
+    });
+  }
+}
+function renderSettings(d) {
+  $('sett').hidden = !d.isHost; if (!d.isHost) return;
+  const sig = JSON.stringify(d.settings); if (sig === sigSet) return; sigSet = sig;
+  $('askSw').checked = d.settings.ask; cleanVal = String(d.settings.cleanHours); drawSeg();
+  hasPin = /^\d{4}$/.test(d.settings.pin || ''); drawPin(d.settings);
+}
+let hasPin = false;
+const drawPin = s => {
+  $('pinBox').hidden = !$('askSw').checked;
+  $('pinSw').checked = hasPin || pinEditing;
+  $('pinRow').hidden = !$('pinSw').checked;
+  if (document.activeElement !== $('pinIn')) $('pinIn').value = s ? (s.pin || '') : $('pinIn').value;
+};
+let pinEditing = false;
+$('pinSw').onchange = () => {
+  if ($('pinSw').checked) { pinEditing = true; $('pinRow').hidden = false; $('pinIn').focus(); }
+  else { pinEditing = false; hasPin = false; $('pinRow').hidden = true; $('pinIn').value = ''; post({ pin: '' }, 'PIN turned off'); }
+};
+$('pinIn').oninput = () => { $('pinIn').value = $('pinIn').value.replace(/\D/g, '').slice(0, 4); };
+$('pinSave').onclick = () => {
+  const v = $('pinIn').value;
+  if (!/^\d{4}$/.test(v)) return toast('Enter exactly 4 digits');
+  pinEditing = false; hasPin = true; post({ pin: v }, 'PIN saved');
+};
+$('pinIn').onkeydown = e => { if (e.key === 'Enter') $('pinSave').click(); };
+const post = (o, msg) => fetch('/api/settings', { method: 'POST', body: JSON.stringify(o) }).then(() => { sigSet = ''; toast(msg); refresh(); });
+const saveSettings = () => fetch('/api/settings', { method: 'POST', body: JSON.stringify({ ask: $('askSw').checked, cleanHours: +cleanVal }) }).then(() => toast('Saved'));
+let cleanVal = '0';
+const drawSeg = () => $('cleanSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === cleanVal));
+$('cleanSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; cleanVal = b.dataset.v; drawSeg(); saveSettings(); };
+$('askSw').onchange = () => { if (!$('askSw').checked && !hasPin) { pinEditing = false; $('pinIn').value = ''; } drawPin(); saveSettings(); };
+$('themebtn').onclick = () => {
+  const light = document.documentElement.dataset.theme !== 'light';
+  if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem('theme', light ? 'light' : 'dark'); } catch (e) {}
+  document.querySelector('meta[name=theme-color]').content = light ? '#ffffff' : '#0d1117';
+};
+
+/* custom dialog: ask({title,msg,input,ok,danger}) -> true/false, or string when input is given (null on cancel) */
+function ask(o) {
+  return new Promise(res => {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = '<div class="box" role="dialog"><h3></h3><p></p><input class="in" hidden maxlength="30"><div class="mrow"><button type="button" class="mini c">Cancel</button><button type="button" class="mini ok2"></button></div></div>';
+    const $$ = s => m.querySelector(s);
+    $$('h3').textContent = o.title; $$('p').textContent = o.msg || ''; $$('p').hidden = !o.msg;
+    const ok = $$('.ok2'); ok.textContent = o.ok || 'OK'; ok.classList.add(o.danger ? 'dng' : 'pri');
+    const inp = $$('.in'); if (o.input !== undefined) { inp.hidden = false; inp.maxLength = o.max || 30; inp.value = o.input; }
+    const done = v => { document.removeEventListener('keydown', key, true); m.remove(); res(v); };
+    const key = e => { if (e.key === 'Escape') { e.stopPropagation(); done(o.input !== undefined ? null : false); } else if (e.key === 'Enter' && (o.input !== undefined || (!o.danger && !(e.target.closest && e.target.closest('.c'))))) { e.preventDefault(); done(o.input !== undefined ? inp.value : true); } };
+    document.addEventListener('keydown', key, true);
+    $$('.c').onclick = () => done(o.input !== undefined ? null : false);
+    ok.onclick = () => done(o.input !== undefined ? inp.value : true);
+    m.onclick = e => { if (e.target === m) done(o.input !== undefined ? null : false); };
+    document.body.append(m); (o.input !== undefined ? inp : o.danger ? $$('.c') : ok).focus(); if (o.input !== undefined) inp.select();
+  });
+}
+
+/* eye button: show / hide a PIN */
+const EYE_ON = S('<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>');
+const EYE_OFF = S('<path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>');
+document.querySelectorAll('.eye').forEach(b => {
+  const inp = b.parentElement.querySelector('input');
+  const draw = () => { const shown = inp.type === 'text'; b.innerHTML = shown ? EYE_OFF : EYE_ON; b.setAttribute('aria-label', shown ? 'Hide PIN' : 'Show PIN'); b.title = shown ? 'Hide PIN' : 'Show PIN'; };
+  b.onmousedown = e => e.preventDefault();               // keep focus (and the phone keyboard) in the PIN box
+  b.onclick = () => { inp.type = inp.type === 'password' ? 'text' : 'password'; draw(); inp.focus(); };
+  draw();
+});
+
+/* join with PIN (shown on the waiting screen) */
+$('joinPin').oninput = () => { $('joinPin').value = $('joinPin').value.replace(/\D/g, '').slice(0, 4); $('joinErr').textContent = ''; };
+$('joinPin').onkeydown = e => { if (e.key === 'Enter') $('joinBtn').click(); };
+$('joinBtn').onclick = async () => {
+  const v = $('joinPin').value;
+  if (!/^\d{4}$/.test(v)) { $('joinErr').textContent = 'Enter all 4 digits'; return; }
+  try {
+    const r = await fetch('/api/join?pin=' + v, { method: 'POST' });
+    if (r.ok) { $('joinPin').value = ''; $('joinErr').textContent = ''; refresh(); }
+    else if (r.status === 429) { const j = await r.json().catch(() => ({})); $('joinErr').textContent = 'Too many tries. Wait ' + (j.wait || 60) + ' s.'; }
+    else $('joinErr').textContent = 'Wrong PIN';
+  } catch (e) { $('joinErr').textContent = "Can't reach the PC"; }
+};
+
+/* ---------- phone "Share" menu (installed app over HTTPS) ---------- */
+if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});
+(async function takeShared() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('share')) return;
+  history.replaceState(null, '', '/');
+  const n = +q.get('share') || 0, text = q.get('t') || '';
+  try {
+    const cache = await caches.open('share-inbox'), files = [];
+    for (const req of await cache.keys()) { const r = await cache.match(req); const name = decodeURIComponent(req.url.split('/').pop()); files.push(new File([await r.blob()], name, { type: r.headers.get('Content-Type') || '' })); await cache.delete(req); }
+    if (files.length) { enqueue(files); toast(files.length + (files.length === 1 ? ' shared file is sending' : ' shared files are sending')); }
+    else if (n) toast('Nothing came through from the Share menu');
+  } catch (e) { toast('Could not read the shared files'); }
+  if (text) { showTab('text'); $('text').value = text; $('text').dispatchEvent(new Event('input')); toast('Shared text is ready. Tap Add to send it.', null, null, 4000); }
+})();
+
+/* ---------- polling ---------- */
+function setOffline(v) { $('offline').classList.toggle('on', v); }
+async function refresh() {
+  try {
+    const n = lsGet('devname');
+    const r = await fetch('/api/list' + (n ? '?n=' + encodeURIComponent(n) : ''));
+    setOffline(false);
+    if (r.status === 403) { $('gone').classList.add('on'); return; }
+    $('gone').classList.remove('on');
+    const d = await r.json();
+    if (d.pending === true) { $('wait').classList.add('on'); $('joinBox').hidden = !d.pin; return; }
+    $('wait').classList.remove('on');
+    apply(d);
+  } catch (e) { setOffline(true); }
+}
+function apply(d) {
+  isHost = d.isHost; me = d.me || '';
+  const dsig = JSON.stringify(d.devices.map(x => [x.id, x.name, x.me]));
+  if (dsig !== sigDevSend) { sigDevSend = dsig; devs = d.devices; renderSend(); }
+  const n = d.devices.length;
+  $('host').textContent = n + (n === 1 ? ' device' : ' devices');
+  renderDevices(d); renderSettings(d);
+
+  // files
+  const sf = JSON.stringify([d.files, d.folders]);
+  if (sf !== sigFiles) {
+    sigFiles = sf; all = d.files; folders = d.folders || [];
+    const names = new Set(all.map(f => f.name));
+    if (known) {
+      const fresh = all.filter(f => !known.has(f.name) && !mine.has(f.name));
+      if (fresh.length) {
+        toast(fresh.length > 1 ? fresh.length + ' new files received' : 'New file: ' + fresh[0].name);
+        if (tab !== 'files') newFiles += fresh.length;
+      }
+    }
+    known = names; render();
+  }
+  $('clearAll').hidden = !isHost || !all.length;
+
+  // snippets
+  const ss = JSON.stringify(d.snippets.map(s => s.id));
+  if (ss !== sigSnips) {
+    sigSnips = ss;
+    const ids = new Set(d.snippets.map(s => s.id));
+    if (knownSnips) {
+      const fresh = d.snippets.filter(s => !knownSnips.has(s.id) && !addedByMe.has(s.id));
+      fresh.forEach(s => s.fresh = true);
+      if (fresh.length) { toast('New text received'); if (tab !== 'text') newTexts += fresh.length; }
+    }
+    knownSnips = ids; snips = d.snippets; renderSnips();
+  }
+  badges();
+}
+const addedByMe = new Set();
+// remember snippets this device added, so it doesn't notify itself
+$('save').onclick = async () => {
+  const v = $('text').value;
+  if (!v.trim()) return toast('Type something first');
+  const before = new Set(snips.map(s => s.id));
+  const r = await fetch('/api/snippet' + (sendTo ? '?to=' + encodeURIComponent(sendTo) : ''), { method: 'POST', body: v });
+  if (!r.ok) return toast('Could not add, try again');
+  $('text').value = ''; toast('Added');
+  const d = await (await fetch('/api/list')).json();
+  d.snippets.forEach(s => { if (!before.has(s.id) && s.text === v) addedByMe.add(s.id); });
+  refresh();
+};
+$('text').oninput = () => {                                   // warn before the 100,000 character limit silently cuts a note
+  const n = $('text').value.length, c = $('cnt');
+  c.textContent = n >= 90000 ? (n >= 100000 ? 'Limit reached: ' : '') + n.toLocaleString() + ' / 100,000' : '';
+  c.style.color = n >= 100000 ? 'var(--danger)' : '';
+};
+$('text').onkeydown =e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('save').click(); };
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { popOpen(null); closeLb(); } });
+showTab(lsGet('tab') === 'text' ? 'text' : 'files');
+(function loop() { refresh().finally(() => setTimeout(loop, document.hidden ? 5000 : 2000)); })();   // calmer polling when the tab is in the background
+setInterval(() => { render(); renderSnips(); }, 30000);
+</script>
+</body>
+</html>
